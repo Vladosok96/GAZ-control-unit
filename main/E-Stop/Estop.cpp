@@ -31,7 +31,17 @@ void Estop::init(gpio_num_t buttonPin) {
 }
 
 bool Estop::normal() {
+    if (!isAvailable) {
+        return false;
+    }
+    if (isNormal == true) {
+        isAvailable = false;
+    }
     return !isNormal;
+}
+
+void Estop::set_available() {
+    isAvailable = true;
 }
 
 void Estop::task(void* args) {

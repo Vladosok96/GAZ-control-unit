@@ -38,26 +38,38 @@ LowPassFilter wheel_filter = LowPassFilter(0.4);
 void remote_control_task(void *args) {
     while (true) {
         LCD::collectFaults(FlySkyIBus::available(), Buttons::remote_connected(), Estop::normal());
+        
         if (Buttons::get_button_state(Buttons::AUTOPILOT)) {
-            if (Buttons::remote_connected() && FlySkyIBus::available() && Estop::normal()) {
-                if (Buttons::get_remote_button_state(Buttons::STOP)) {
-                    StateMachine::set_control_mode(StateMachine::Mode::EStop);
-                }
-                else if (Buttons::get_remote_button_state(Buttons::START)) {
-                    LCD::resetFaults();
-                    if (FlySkyIBus::readChannel(8) < 1500) {
-                        StateMachine::set_control_mode(StateMachine::Mode::Manual);
-                    } else {
-                        StateMachine::set_control_mode(StateMachine::Mode::Auto);
-                    }
-                }
-                else if (Buttons::get_remote_button_state(Buttons::PAUSE)) {
-                    LCD::resetFaults();
-                    StateMachine::set_control_mode(StateMachine::Mode::Pause);
+            if (FlySkyIBus::available() && Estop::normal()) {
+                LCD::resetFaults();
+                if (FlySkyIBus::readChannel(8) < 1500) {
+                    StateMachine::set_control_mode(StateMachine::Mode::Manual);
+                } else {
+                    StateMachine::set_control_mode(StateMachine::Mode::Auto);
                 }
             } else {
                 StateMachine::set_control_mode(StateMachine::Mode::EStop);
             }
+
+            // if (Buttons::remote_connected() && FlySkyIBus::available() && Estop::normal()) {
+            //     if (Buttons::get_remote_button_state(Buttons::STOP)) {
+            //         StateMachine::set_control_mode(StateMachine::Mode::EStop);
+            //     }
+            //     else if (Buttons::get_remote_button_state(Buttons::START)) {
+            //         LCD::resetFaults();
+            //         if (FlySkyIBus::readChannel(8) < 1500) {
+            //             StateMachine::set_control_mode(StateMachine::Mode::Manual);
+            //         } else {
+            //             StateMachine::set_control_mode(StateMachine::Mode::Auto);
+            //         }
+            //     }
+            //     else if (Buttons::get_remote_button_state(Buttons::PAUSE)) {
+            //         LCD::resetFaults();
+            //         StateMachine::set_control_mode(StateMachine::Mode::Pause);
+            //     }
+            // } else {
+            //     StateMachine::set_control_mode(StateMachine::Mode::EStop);
+            // }
         } else {
             StateMachine::set_control_mode(StateMachine::Mode::Disable);
         }
@@ -136,9 +148,13 @@ void remote_control_task(void *args) {
             Signals::set_right_turn(false);
             CruiseControl::disable();
             Brake::setBrakeTorque(1);
+            Clutch::setState(Clutch::ClutchState::Press);
             Wheel::disable();
             Throttle::disable();
             Engine::set_state(false);
+            if (FlySkyIBus::readChannel(1) > 1800) {
+                Estop::set_available();
+            }
             break;
         
         default:

@@ -33,6 +33,10 @@ void Clutch::task(void* args) {
             clutch_motor.setTarget(pressedPos);
             clutch_motor.setSpeedLimit(0);
             break;
+        case SlowPress:
+            clutch_motor.setTarget(pressedPos);
+            clutch_motor.setSpeedLimit(0.005);
+            break;
         case Release:
             clutch_motor.setTarget(zeroPos);
             if (clutch_motor.getPosition() > fullEngPos && clutch_motor.getPosition() < minEngPos) {

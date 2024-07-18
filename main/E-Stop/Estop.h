@@ -6,7 +6,9 @@ class Estop {
 public:
     static void init(gpio_num_t buttonPin);
     static bool normal();
+    static void set_available();
 private:
+    static inline bool isAvailable = false;
     static inline bool isNormal = false;
     static inline int64_t timer = -10000000;
     static void task(void* args);

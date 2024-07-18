@@ -5,6 +5,7 @@ public:
     enum ClutchState {
         Unknown = 0,
         Press,
+        SlowPress,
         Pause,
         Release
     };
