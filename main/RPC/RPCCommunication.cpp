@@ -56,6 +56,9 @@ void RPCCommunication::rpc_communication_task(void *args) {
         RPCClient::send_request("angle_set", Wheel::get_target_angle(), dest_addr_wheel);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
+        RPCClient::send_request("play_sound", 0, dest_addr_wheel);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+
         RPCClient::send_request("throttle_set", Throttle::get_target_value(), Throttle::getRelay(), dest_addr_wheel);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
@@ -64,17 +67,5 @@ void RPCCommunication::rpc_communication_task(void *args) {
 
         RPCClient::send_request("set_values", Signals::get_signals_bitmask(), dest_addr_relay);
         vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
-}
-
-void RPCCommunication::lmp_communication_task(void *args) {
-    struct sockaddr_in dest_addr_pc;
-    dest_addr_pc.sin_addr.s_addr = inet_addr("192.168.1.102");
-    dest_addr_pc.sin_family = AF_INET;
-    dest_addr_pc.sin_port = htons(9090);
-
-    while (true) {
-        RPCClient::send_request("lmp_data", LMP::get_lmp_data(), dest_addr_pc);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }

@@ -65,7 +65,6 @@ void CruiseControl::cruise_update_task(void *args) {
         case PARKING:
             current_clutch_state = Clutch::Press;
             target_brake = 0.4;
-            target_gear = 0;
             target_rpm = 1000;
             dirrection = 0;
             if (target_speed > 0) {

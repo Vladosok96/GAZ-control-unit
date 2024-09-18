@@ -77,53 +77,9 @@ void RPCClient::send_request(char *method, int value_1, float value_2, sockaddr_
         "{"
             "\"jsonrpc\":\"2.0\","
             "\"method\":\"%s\","
-            "\"params\":[%d,%f]"
+            "\"params\":[%d, %f]"
         "}", 
         method, value_1, value_2
-    );
-
-    xSemaphoreTake(mutex, 500 / portTICK_PERIOD_MS);
-    int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    xSemaphoreGive(mutex);
-
-    // if (err < 0)
-    //     ESP_LOGE(TAG, "Error during sending RPCClient request");
-}
-
-void RPCClient::send_request(char *method, bool value_1, bool value_2, bool value_3, bool value_4, sockaddr_in dest_addr) {
-    char payload[256];
-
-    sprintf(
-        payload, 
-        "{"
-            "\"jsonrpc\":\"2.0\","
-            "\"method\":\"%s\","
-            "\"params\":[%d, %d, %d, %d]"
-        "}", 
-        method, value_1, value_2, value_3, value_4
-    );
-
-    xSemaphoreTake(mutex, 500 / portTICK_PERIOD_MS);
-    int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    xSemaphoreGive(mutex);
-
-    // if (err < 0)
-    //     ESP_LOGE(TAG, "Error during sending RPCClient request");
-}
-
-void RPCClient::send_request(char *method, char* value, sockaddr_in dest_addr) {
-    char payload[512];
-
-    sprintf(
-        payload, 
-        "{"
-            "\"jsonrpc\":\"2.0\","
-            "\"method\":\"%s\","
-            "\"params\": {"
-                "%s"
-            "}"
-        "}", 
-        method, value
     );
 
     xSemaphoreTake(mutex, 500 / portTICK_PERIOD_MS);

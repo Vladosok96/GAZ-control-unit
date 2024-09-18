@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "jsonrpc-lean/server.h"
+#include "NeiryMetrics.h"
 #include "nvs_flash.h"
 #include "PCCommunication.h"
 #include "RPCCommunication.h"
@@ -93,14 +94,15 @@ void udp_server_task(void* arg)
 
 void start_udp_server() {
     rpc_server.RegisterFormatHandler(jsonFormatHandler);
-
     dispatcher = &rpc_server.GetDispatcher();
-    dispatcher->AddMethod("set_control_values", &PCCommunication::set_parameters);
-    dispatcher->AddMethod("upd_buttons", &Buttons::set_remote_buttons_state);
-    dispatcher->AddMethod("set_pause_state", &StateMachine::set_pause_state);
-    dispatcher->AddMethod("set_gearbox_state", &RPCCommunication::set_gearbox_state);
-    dispatcher->AddMethod("set_rpm_speed", &RPCCommunication::set_rpm_speed);
+
+    dispatcher->AddMethod("set_api_metrics", &NeiryMetrics::set_api_metrics);
     dispatcher->AddMethod("set_buttons_state", &Buttons::set_buttons_state);
+    dispatcher->AddMethod("set_control_values", &PCCommunication::set_parameters);
+    dispatcher->AddMethod("set_gearbox_state", &RPCCommunication::set_gearbox_state);
+    dispatcher->AddMethod("set_pause_state", &StateMachine::set_pause_state);
+    dispatcher->AddMethod("set_rpm_speed", &RPCCommunication::set_rpm_speed);
+    dispatcher->AddMethod("upd_buttons", &Buttons::set_remote_buttons_state);
 
     xTaskCreate(udp_server_task, "UDP-Server", 16384, NULL, 3, NULL);
 }

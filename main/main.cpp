@@ -1,6 +1,8 @@
 #include "ADC.h"
 #include "Brake.h"
+#include "Buttons.h"
 #include "Clutch.h"
+#include "CruiseControl.h"
 #include "driver/gpio.h"
 #include "Engine.h"
 #include "Estop.h"
@@ -18,18 +20,17 @@
 #include "LCD.h"
 #include "lowpass_filter.h"
 #include "Motors.h"
+#include "NeiryMetrics.h"
 #include "NVStorage.h"
+#include "PCCommunication.h"
+#include "RPCClient.h"
 #include "RPCCommunication.h"
 #include "Signals.h"
 #include "StateMachine.h"
 #include "Throttle.h"
-#include "Webserver.h"
-#include "Buttons.h"
-#include "Wheel.h"
-#include "PCCommunication.h"
 #include "udp_server.h"
-#include "CruiseControl.h"
-#include "RPCClient.h"
+#include "Webserver.h"
+#include "Wheel.h"
 
 static const char *TAG = "MAIN";
 
@@ -189,7 +190,6 @@ extern "C" void app_main(void) {
     RPCClient::init();
 
     xTaskCreate(RPCCommunication::rpc_communication_task, "RPC TX", 8192, NULL, 5, NULL);
-    xTaskCreate(RPCCommunication::lmp_communication_task, "LMP TX", 8192, NULL, 5, NULL);
 
     Engine::init(PIN_ENGINE_IGNITION, PIN_ENGINE_STARTER);
 
