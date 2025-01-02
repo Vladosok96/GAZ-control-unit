@@ -92,6 +92,11 @@ void CruiseControl::cruise_update_task(void *args) {
                 current_state = GEAR;
                 target_gear = next_gear;
             }
+
+            if (target_speed < 6) {
+                current_clutch_state = Clutch::Press;
+            }
+
             check_stop_park();
             ESP_LOGI(TAG, "clutchpush: c_gear %d t_gear %d t_rpm %d c_rpm %d t_speed %d c_speed %d", Gearbox::get_current_gear(), target_gear, target_rpm, (int)Throttle::get_can_rpm(), (int)target_speed, (int)Throttle::get_can_speed());
             break;
@@ -107,6 +112,11 @@ void CruiseControl::cruise_update_task(void *args) {
             if (Gearbox::get_current_gear() == target_gear) {
                 current_state = RPM;
             }
+
+            if (target_speed < 6) {
+                current_clutch_state = Clutch::Press;
+            }
+
             check_stop_park();
             ESP_LOGI(TAG, "gear: c_gear %d t_gear %d t_rpm %d c_rpm %d t_speed %d c_speed %d", Gearbox::get_current_gear(), target_gear, target_rpm, (int)Throttle::get_can_rpm(), (int)target_speed, (int)Throttle::get_can_speed());
             break;
@@ -128,6 +138,9 @@ void CruiseControl::cruise_update_task(void *args) {
                 current_state = RELEASE;
             }
             
+            if (target_speed < 6) {
+                current_clutch_state = Clutch::Press;
+            }
             
             check_stop_park();
             ESP_LOGI(TAG, "rpm: t_rpm %d c_rpm %d dif %ld", target_rpm, (int)Throttle::get_can_rpm(), abs(Throttle::get_can_rpm() - target_rpm));
@@ -144,11 +157,14 @@ void CruiseControl::cruise_update_task(void *args) {
             if (Clutch::isEngage()) {
                 current_state = DRIVE;
             }
-            if (abs(target_speed) > 0 && abs(target_speed) < 7) {
-                if (Throttle::get_can_speed() > 3) {
-                    current_state = CLUTCHHOLD;
-                }
+            if (target_speed < 6) {
+                current_clutch_state = Clutch::Press;
             }
+            // if (abs(target_speed) > 0 && abs(target_speed) < 7) {
+            //     if (Throttle::get_can_speed() > 3) {
+            //         current_state = CLUTCHHOLD;
+            //     }
+            // }
             check_stop_park();
             ESP_LOGI(TAG, "release: t_rpm %d c_rpm %d", target_rpm, (int)Throttle::get_can_rpm());
             break;
@@ -164,10 +180,13 @@ void CruiseControl::cruise_update_task(void *args) {
             if (Clutch::isEngage()) {
                 current_state = DRIVE;
             }
-            if (abs(target_speed) > 0 && abs(target_speed) < 7) {
-                if (Throttle::get_can_speed() <= 3) {
-                    current_state = RELEASE;
-                }
+            // if (abs(target_speed) > 0 && abs(target_speed) < 7) {
+            //     if (Throttle::get_can_speed() <= 3) {
+            //         current_state = RELEASE;
+            //     }
+            // }
+            if (target_speed < 6) {
+                current_clutch_state = Clutch::Press;
             }
             check_stop_park();
             ESP_LOGI(TAG, "clutchhold: t_rpm %d c_rpm %d", target_rpm, (int)Throttle::get_can_rpm());
@@ -179,6 +198,10 @@ void CruiseControl::cruise_update_task(void *args) {
                 target_rpm = 1200;
             }
             else {
+                if (target_speed < 6) {
+                    target_rpm = 700;
+                    current_clutch_state = Clutch::Press;
+                }
                 if (target_speed < 10) {
                     target_rpm = 700;
                 }

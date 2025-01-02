@@ -56,9 +56,6 @@ void RPCCommunication::rpc_communication_task(void *args) {
         RPCClient::send_request("angle_set", Wheel::get_target_angle(), dest_addr_wheel);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 
-        RPCClient::send_request("play_sound", 0, dest_addr_wheel);
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-
         RPCClient::send_request("throttle_set", Throttle::get_target_value(), Throttle::getRelay(), dest_addr_wheel);
         vTaskDelay(10 / portTICK_PERIOD_MS);
 

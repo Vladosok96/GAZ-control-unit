@@ -18,6 +18,7 @@
 #include "sdkconfig.h"
 #include "StateMachine.h"
 #include "stdio.h"
+#include "Signals.h"
 #include "stdlib.h"
 #include "string.h"
 #include "udp_server.h"
@@ -92,6 +93,11 @@ void udp_server_task(void* arg)
     vTaskDelete(NULL);
 }
 
+void setAlarm(int32_t state) {
+    Signals::set_alarm(state);
+    ESP_LOGI(TAG, "Alarm");
+}
+
 void start_udp_server() {
     rpc_server.RegisterFormatHandler(jsonFormatHandler);
     dispatcher = &rpc_server.GetDispatcher();
@@ -103,6 +109,7 @@ void start_udp_server() {
     dispatcher->AddMethod("set_pause_state", &StateMachine::set_pause_state);
     dispatcher->AddMethod("set_rpm_speed", &RPCCommunication::set_rpm_speed);
     dispatcher->AddMethod("upd_buttons", &Buttons::set_remote_buttons_state);
+    dispatcher->AddMethod("set_alarm", &setAlarm);
 
     xTaskCreate(udp_server_task, "UDP-Server", 16384, NULL, 3, NULL);
 }
