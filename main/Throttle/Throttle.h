@@ -8,6 +8,7 @@ public:
     static int32_t get_target_value();
     static void set_can_speed(int32_t speed);
     static int32_t get_can_speed();
+    static int32_t get_signed_can_speed(int32_t sign);
     static void set_can_rpm(int32_t rpm);
     static int32_t get_can_rpm();
     static void enable();

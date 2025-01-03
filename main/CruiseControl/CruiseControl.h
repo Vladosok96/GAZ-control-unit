@@ -30,7 +30,17 @@ private:
     static inline float target_speed;
     static inline float gear_coefficients[6];
     static inline float gearbox_coefficient;
+    
+    /**
+     * @brief Состояние круиз-контроля, когда выключен все целевые показатели на нуле
+     */
     static inline bool enabled = false;
+
+    /**
+     * @brief Состояние автомоблия, совершается ли в данный момент троганье с места
+     */
+    static inline bool is_starting = false;
+
     static inline int dirrection;
     static void cruise_update_task(void *args);
     static void check_stop_park();

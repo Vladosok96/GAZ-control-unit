@@ -61,11 +61,20 @@ void Clutch::setParams(float disabledPos, float zeroPos, float fullEngPos, float
     Clutch::pressedPos = pressedPos;
 }
 
+
+/**
+ * @brief Показывает состояние педали сцепления и самого сцепления
+ * @note Если сцепление полностью схваилось, то возвращает true
+ */
 bool Clutch::isEngage() {
     if (clutch_motor.getPosition() < fullEngPos) return true;
     return false;
 }
 
+/**
+ * @brief Показывает состояние педали сцепления и самого сцепления
+ * @note Если сцепление полнстью прекратило схватывать, то возвращает true
+ */
 bool Clutch::isUnengage() {
     ESP_LOGI(TAG, "%f < %f", minEngPos, clutch_motor.getPosition());
     if (minEngPos < clutch_motor.getPosition()) return true;

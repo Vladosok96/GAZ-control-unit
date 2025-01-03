@@ -18,6 +18,10 @@ int32_t Throttle::get_can_speed() {
     return current_speed;
 }
 
+int32_t Throttle::get_signed_can_speed(int32_t sign) {
+    return current_speed * sign;
+}
+
 void Throttle::set_can_rpm(int32_t rpm) {
     current_rpm = rpm;
 }

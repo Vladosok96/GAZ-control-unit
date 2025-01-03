@@ -19,6 +19,7 @@ void CruiseControl::disable() {
     enabled = false;
     current_state = PARKING;
     target_gear = 0;
+    is_starting = true;
     next_gear = 0;
     current_clutch_state = Clutch::Press;
     target_brake = 1;
@@ -27,23 +28,13 @@ void CruiseControl::disable() {
 }
 
 void CruiseControl::check_stop_park() {
-    // if (dirrection > 0 && Throttle::get_can_speed() - target_speed > 2) {
-    //     current_state = STOPPING;
-    // }
-    // if (dirrection < 0 && Throttle::get_can_speed() - target_speed < -2) {
-    //     current_state = STOPPING;
-    // }
-    // if (dirrection > 0 && Throttle::get_can_speed() < 2 && target_speed < 2) {
-    //     current_state = PARKING;
-    // }
-    // if (dirrection < 0 && Throttle::get_can_speed() > -2 && target_speed > -2) {
-    //     current_state = PARKING;
-    // }
-
-    if (dirrection > 0 && target_speed == 0) {
-        current_state = PARKING;
+    if (dirrection > 0 && Throttle::get_signed_can_speed(dirrection) - target_speed > 2) {
+        current_state = STOPPING;
     }
-    if (dirrection < 0 && target_speed == 0) {
+    if (dirrection < 0 && Throttle::get_signed_can_speed(dirrection) - target_speed < -2) {
+        current_state = STOPPING;
+    }
+    if (Throttle::get_can_speed() < 2 && target_speed == 0) {
         current_state = PARKING;
     }
 }
@@ -68,6 +59,7 @@ void CruiseControl::cruise_update_task(void *args) {
             target_gear = 0;
             target_rpm = 1000;
             dirrection = 0;
+            is_starting = true;
             if (target_speed > 0) {
                 current_state = CLUTCHPUSH;
                 dirrection = 1;
@@ -82,7 +74,7 @@ void CruiseControl::cruise_update_task(void *args) {
             break;
         case CLUTCHPUSH:
             current_clutch_state = Clutch::Press;
-            if (Throttle::get_can_speed() < 2) {
+            if (is_starting) {
                 target_brake = 0.4;
             }
             else {
@@ -98,13 +90,15 @@ void CruiseControl::cruise_update_task(void *args) {
             break;
         case GEAR:
             current_clutch_state = Clutch::Press;
-            if (Throttle::get_can_speed() < 2) {
+            if (is_starting) {
                 target_brake = 0.4;
             }
             else {
                 target_brake = 0;
             }
             target_rpm = 1000;
+
+            // Нужно доделать блок переключения передач
             if (Gearbox::get_current_gear() == target_gear) {
                 current_state = RPM;
             }
@@ -113,62 +107,53 @@ void CruiseControl::cruise_update_task(void *args) {
             break;
         case RPM:
             current_clutch_state = Clutch::Press;
-            if (Throttle::get_can_speed() < 6) {
+            if (is_starting) {
                 target_brake = 0.4;
             }
             else {
                 target_brake = 0;
             }
-            if (Throttle::get_can_speed() < 4) {
-                target_rpm = 700;
+            target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
+            if (target_rpm < 800) {
+                target_rpm = 800;
             }
-            else {
-                target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
-            }
-            if (abs(Throttle::get_can_rpm() - target_rpm) < 1000) {
+            if (abs(Throttle::get_can_rpm() - target_rpm) < 500) {
                 current_state = RELEASE;
             }
-            
-            
             check_stop_park();
             ESP_LOGI(TAG, "rpm: t_rpm %d c_rpm %d dif %ld", target_rpm, (int)Throttle::get_can_rpm(), abs(Throttle::get_can_rpm() - target_rpm));
             break;
         case RELEASE:
             current_clutch_state = Clutch::Release;
-            target_brake = 0;
-            if (Throttle::get_can_speed() < 4) {
-                target_rpm = 1200;
+            if (is_starting && Clutch::isUnengage()) {
+                target_brake = 0;    
             }
             else {
-                target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
+                is_starting = false;
+                target_brake = 0;
+            }
+            target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
+            if (target_rpm < 800) {
+                target_rpm = 800;
             }
             if (Clutch::isEngage()) {
                 current_state = DRIVE;
             }
-            if (abs(target_speed) > 0 && abs(target_speed) < 7) {
-                if (Throttle::get_can_speed() > 3) {
-                    current_state = CLUTCHHOLD;
-                }
+            if (Throttle::get_can_speed() > abs(target_speed) && abs(target_speed) <= 7) {
+                current_state = CLUTCHHOLD;
             }
             check_stop_park();
             ESP_LOGI(TAG, "release: t_rpm %d c_rpm %d", target_rpm, (int)Throttle::get_can_rpm());
             break;
         case CLUTCHHOLD:
             current_clutch_state = Clutch::SlowPress;
-            target_brake = 0;
-            if (Throttle::get_can_speed() < 4) {
-                target_rpm = 1200;
+            target_brake = 0.2;
+            target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
+            if (target_rpm < 800) {
+                target_rpm = 800;
             }
-            else {
-                target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
-            }
-            if (Clutch::isEngage()) {
-                current_state = DRIVE;
-            }
-            if (abs(target_speed) > 0 && abs(target_speed) < 7) {
-                if (Throttle::get_can_speed() <= 3) {
-                    current_state = RELEASE;
-                }
+            if (abs(target_speed) - Throttle::get_can_speed() > 2) {
+                current_state = RELEASE;
             }
             check_stop_park();
             ESP_LOGI(TAG, "clutchhold: t_rpm %d c_rpm %d", target_rpm, (int)Throttle::get_can_rpm());
@@ -176,35 +161,26 @@ void CruiseControl::cruise_update_task(void *args) {
         case DRIVE:
             current_clutch_state = Clutch::Release;
             target_brake = 0;
-            if (Throttle::get_can_speed() < 4) {
-                target_rpm = 1200;
+
+            target_rpm = calculate_rpm(target_gear, target_speed);
+            
+            if (Throttle::get_can_rpm() < 1000 && target_gear > 1 && target_gear <= 5) {
+                current_state = CLUTCHPUSH;
+                next_gear = target_gear - 1;
             }
-            else {
-                if (target_speed < 10) {
-                    target_rpm = 700;
-                }
-                else if (target_speed < 60) {
-                    target_rpm = 2500;
-                }
-                // target_rpm = calculate_rpm(target_gear, target_speed);
+            if (Throttle::get_can_rpm() > 2000 && target_gear < 5) {
+                current_state = CLUTCHPUSH;
+                next_gear = target_gear + 1;
             }
-            // if (Throttle::get_can_rpm() < 950 && target_gear > 1 && target_gear < 6) {
-            //     current_state = CLUTCHPUSH;
-            //     next_gear = target_gear - 1;
-            // }
-            // if (Throttle::get_can_rpm() > 2500 && target_gear < 4) {
-            //     current_state = CLUTCHPUSH;
-            //     next_gear = target_gear + 1;
-            // }
             check_stop_park();
             ESP_LOGI(TAG, "drive: t_rpm %d c_rpm %d c_speed %ld", target_rpm, (int)Throttle::get_can_rpm(), Throttle::get_can_speed());
             break;
         case STOPPING:
-            current_clutch_state = Clutch::Press;
-            target_brake = 0.4;
-            target_rpm = calculate_rpm(target_gear, Throttle::get_can_speed());
-            if (target_speed > 3 && target_speed - Throttle::get_can_speed() > 1) {
-                current_state = DRIVE;
+            current_clutch_state = Clutch::SlowPress;
+            target_brake = 0.2;
+            target_rpm = calculate_rpm(target_gear, target_speed);
+            if (abs(target_speed) - Throttle::get_can_speed() > 2) {
+                current_state = RELEASE;
             }
             if (Throttle::get_can_speed() < 2 && target_speed == 0) {
                 current_state = PARKING;
